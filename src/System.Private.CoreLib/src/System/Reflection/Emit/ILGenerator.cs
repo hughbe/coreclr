@@ -1287,7 +1287,7 @@ namespace System.Reflection.Emit
                 throw new ArgumentNullException(nameof(localType));
             }
 
-            if (methodBuilder.m_bIsBaked)
+            if (methodBuilder._isBaked)
             {
                 throw new InvalidOperationException(SR.InvalidOperation_MethodBaked);
             }
@@ -1319,7 +1319,7 @@ namespace System.Reflection.Emit
             index = methodBuilder.GetILGenerator().m_ScopeTree.GetCurrentActiveScopeIndex();
             if (index == -1)
             {
-                methodBuilder.m_localSymInfo.AddUsingNamespace(usingNamespace);
+                methodBuilder._localSymbolInfo.AddUsingNamespace(usingNamespace);
             }
             else
             {

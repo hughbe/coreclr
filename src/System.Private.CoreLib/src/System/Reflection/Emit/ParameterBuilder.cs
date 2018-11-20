@@ -6,17 +6,21 @@ namespace System.Reflection.Emit
 {
     public class ParameterBuilder
     {
-        // Set the default value of the parameter
+        private readonly string _name;
+        private readonly int _position;
+        private readonly ParameterAttributes _attributes;
+        private MethodBuilder _methodBuilder;
+        private ParameterToken _token;
+
         public virtual void SetConstant(object defaultValue)
         {
             TypeBuilder.SetConstantValue(
                 _methodBuilder.GetModuleBuilder(),
                 _token.Token,
-                _position == 0 ? _methodBuilder.ReturnType : _methodBuilder.m_parameterTypes[_position - 1],
+                _position == 0 ? _methodBuilder.ReturnType : _methodBuilder._parameterTypes[_position - 1],
                 defaultValue);
         }
 
-        // Use this function if client decides to form the custom attribute blob themselves
         public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
         {
             if (con == null)
@@ -36,7 +40,6 @@ namespace System.Reflection.Emit
                 false, false);
         }
 
-        // Use this function if client wishes to build CustomAttribute using CustomAttributeBuilder
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
             if (customBuilder == null)
@@ -50,7 +53,7 @@ namespace System.Reflection.Emit
             MethodBuilder methodBuilder,
             int sequence,
             ParameterAttributes attributes,
-            string paramName)            // can be NULL string
+            string paramName)
         {
             _position = sequence;
             _name = paramName;
@@ -64,10 +67,7 @@ namespace System.Reflection.Emit
                         paramName));
         }
 
-        public virtual ParameterToken GetToken()
-        {
-            return _token;
-        }
+        public virtual ParameterToken GetToken() => _token;
 
         public virtual string Name => _name;
 
@@ -80,11 +80,5 @@ namespace System.Reflection.Emit
         public bool IsOut => (_attributes & ParameterAttributes.Out) != 0;
 
         public bool IsOptional => (_attributes & ParameterAttributes.Optional) != 0;
-
-        private readonly string _name;
-        private readonly int _position;
-        private readonly ParameterAttributes _attributes;
-        private MethodBuilder _methodBuilder;
-        private ParameterToken _token;
     }
 }

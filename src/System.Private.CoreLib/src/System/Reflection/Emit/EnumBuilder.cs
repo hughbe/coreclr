@@ -2,39 +2,24 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-/*============================================================
-**
-** 
-** 
-**
-**
-** EnumBuilder is a helper class to build Enum ( a special type ). 
-**
-** 
-===========================================================*/
+using System.Globalization;
 
 namespace System.Reflection.Emit
 {
-    using System;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Reflection;
-    using System.Runtime.InteropServices;
-    using CultureInfo = System.Globalization.CultureInfo;
-
-    sealed public class EnumBuilder : TypeInfo
+    public sealed class EnumBuilder : TypeInfo
     {
-        public override bool IsAssignableFrom(System.Reflection.TypeInfo typeInfo)
-        {
-            if (typeInfo == null) return false;
-            return IsAssignableFrom(typeInfo.AsType());
-        }
+        internal TypeBuilder _typeBuilder;
+        private FieldBuilder _underlyingField;
 
-        // Define literal for enum
+        public override bool IsAssignableFrom(TypeInfo typeInfo)
+        {
+            return typeInfo != null && IsAssignableFrom(typeInfo.AsType());
+        }
 
         public FieldBuilder DefineLiteral(string literalName, object literalValue)
         {
             // Define the underlying field for the enum. It will be a non-static, private field with special name bit set. 
-            FieldBuilder fieldBuilder = m_typeBuilder.DefineField(
+            FieldBuilder fieldBuilder = _typeBuilder.DefineField(
                 literalName,
                 this,
                 FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
@@ -42,45 +27,18 @@ namespace System.Reflection.Emit
             return fieldBuilder;
         }
 
-        public TypeInfo CreateTypeInfo()
-        {
-            return m_typeBuilder.CreateTypeInfo();
-        }
+        public TypeInfo CreateTypeInfo() => _typeBuilder.CreateTypeInfo();
 
-        // CreateType cause EnumBuilder to be baked.
-        public Type CreateType()
-        {
-            return m_typeBuilder.CreateType();
-        }
+        public Type CreateType() => _typeBuilder.CreateType();
 
         // Get the internal metadata token for this class.
-        public TypeToken TypeToken
-        {
-            get { return m_typeBuilder.TypeToken; }
-        }
+        public TypeToken TypeToken => _typeBuilder.TypeToken;
 
+        public FieldBuilder UnderlyingField => _underlyingField;
 
-        // return the underlying field for the enum
-        public FieldBuilder UnderlyingField
-        {
-            get { return m_underlyingField; }
-        }
+        public override string Name => _typeBuilder.Name;
 
-        public override string Name
-        {
-            get { return m_typeBuilder.Name; }
-        }
-
-        /// <summary>
-        /// abstract methods defined in the base class
-        /// </summary>
-        public override Guid GUID
-        {
-            get
-            {
-                return m_typeBuilder.GUID;
-            }
-        }
+        public override Guid GUID => _typeBuilder.GUID;
 
         public override object InvokeMember(
             string name,
@@ -92,101 +50,79 @@ namespace System.Reflection.Emit
             CultureInfo culture,
             string[] namedParameters)
         {
-            return m_typeBuilder.InvokeMember(name, invokeAttr, binder, target, args, modifiers, culture, namedParameters);
+            return _typeBuilder.InvokeMember(name, invokeAttr, binder, target, args, modifiers, culture, namedParameters);
         }
 
-        public override Module Module
-        {
-            get { return m_typeBuilder.Module; }
-        }
+        public override Module Module => _typeBuilder.Module;
 
-        public override Assembly Assembly
-        {
-            get { return m_typeBuilder.Assembly; }
-        }
+        public override Assembly Assembly => _typeBuilder.Assembly;
 
-        public override RuntimeTypeHandle TypeHandle
-        {
-            get { return m_typeBuilder.TypeHandle; }
-        }
+        public override RuntimeTypeHandle TypeHandle => _typeBuilder.TypeHandle;
 
-        public override string FullName
-        {
-            get { return m_typeBuilder.FullName; }
-        }
+        public override string FullName => _typeBuilder.FullName;
 
-        public override string AssemblyQualifiedName
-        {
-            get
-            {
-                return m_typeBuilder.AssemblyQualifiedName;
-            }
-        }
+        public override string AssemblyQualifiedName => _typeBuilder.AssemblyQualifiedName;
 
-        public override string Namespace
-        {
-            get { return m_typeBuilder.Namespace; }
-        }
+        public override string Namespace => _typeBuilder.Namespace;
 
-        public override Type BaseType
-        {
-            get { return m_typeBuilder.BaseType; }
-        }
+        public override Type BaseType => _typeBuilder.BaseType;
 
         protected override ConstructorInfo GetConstructorImpl(BindingFlags bindingAttr, Binder binder,
                 CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
         {
-            return m_typeBuilder.GetConstructor(bindingAttr, binder, callConvention,
+            return _typeBuilder.GetConstructor(bindingAttr, binder, callConvention,
                             types, modifiers);
         }
 
         public override ConstructorInfo[] GetConstructors(BindingFlags bindingAttr)
         {
-            return m_typeBuilder.GetConstructors(bindingAttr);
+            return _typeBuilder.GetConstructors(bindingAttr);
         }
 
         protected override MethodInfo GetMethodImpl(string name, BindingFlags bindingAttr, Binder binder,
                 CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
         {
             if (types == null)
-                return m_typeBuilder.GetMethod(name, bindingAttr);
-            else
-                return m_typeBuilder.GetMethod(name, bindingAttr, binder, callConvention, types, modifiers);
+            {
+                return _typeBuilder.GetMethod(name, bindingAttr);
+            }
+            
+            return _typeBuilder.GetMethod(name, bindingAttr, binder, callConvention, types, modifiers);
         }
 
         public override MethodInfo[] GetMethods(BindingFlags bindingAttr)
         {
-            return m_typeBuilder.GetMethods(bindingAttr);
+            return _typeBuilder.GetMethods(bindingAttr);
         }
 
         public override FieldInfo GetField(string name, BindingFlags bindingAttr)
         {
-            return m_typeBuilder.GetField(name, bindingAttr);
+            return _typeBuilder.GetField(name, bindingAttr);
         }
 
         public override FieldInfo[] GetFields(BindingFlags bindingAttr)
         {
-            return m_typeBuilder.GetFields(bindingAttr);
+            return _typeBuilder.GetFields(bindingAttr);
         }
 
         public override Type GetInterface(string name, bool ignoreCase)
         {
-            return m_typeBuilder.GetInterface(name, ignoreCase);
+            return _typeBuilder.GetInterface(name, ignoreCase);
         }
 
         public override Type[] GetInterfaces()
         {
-            return m_typeBuilder.GetInterfaces();
+            return _typeBuilder.GetInterfaces();
         }
 
         public override EventInfo GetEvent(string name, BindingFlags bindingAttr)
         {
-            return m_typeBuilder.GetEvent(name, bindingAttr);
+            return _typeBuilder.GetEvent(name, bindingAttr);
         }
 
         public override EventInfo[] GetEvents()
         {
-            return m_typeBuilder.GetEvents();
+            return _typeBuilder.GetEvents();
         }
 
         protected override PropertyInfo GetPropertyImpl(string name, BindingFlags bindingAttr, Binder binder,
@@ -197,179 +133,111 @@ namespace System.Reflection.Emit
 
         public override PropertyInfo[] GetProperties(BindingFlags bindingAttr)
         {
-            return m_typeBuilder.GetProperties(bindingAttr);
+            return _typeBuilder.GetProperties(bindingAttr);
         }
 
         public override Type[] GetNestedTypes(BindingFlags bindingAttr)
         {
-            return m_typeBuilder.GetNestedTypes(bindingAttr);
+            return _typeBuilder.GetNestedTypes(bindingAttr);
         }
 
         public override Type GetNestedType(string name, BindingFlags bindingAttr)
         {
-            return m_typeBuilder.GetNestedType(name, bindingAttr);
+            return _typeBuilder.GetNestedType(name, bindingAttr);
         }
 
         public override MemberInfo[] GetMember(string name, MemberTypes type, BindingFlags bindingAttr)
         {
-            return m_typeBuilder.GetMember(name, type, bindingAttr);
+            return _typeBuilder.GetMember(name, type, bindingAttr);
         }
 
         public override MemberInfo[] GetMembers(BindingFlags bindingAttr)
         {
-            return m_typeBuilder.GetMembers(bindingAttr);
+            return _typeBuilder.GetMembers(bindingAttr);
         }
 
         public override InterfaceMapping GetInterfaceMap(Type interfaceType)
         {
-            return m_typeBuilder.GetInterfaceMap(interfaceType);
+            return _typeBuilder.GetInterfaceMap(interfaceType);
         }
 
         public override EventInfo[] GetEvents(BindingFlags bindingAttr)
         {
-            return m_typeBuilder.GetEvents(bindingAttr);
+            return _typeBuilder.GetEvents(bindingAttr);
         }
 
         protected override TypeAttributes GetAttributeFlagsImpl()
         {
-            return m_typeBuilder.Attributes;
+            return _typeBuilder.Attributes;
         }
 
         public override bool IsTypeDefinition => true;
 
         public override bool IsSZArray => false;
 
-        protected override bool IsArrayImpl()
-        {
-            return false;
-        }
-        protected override bool IsPrimitiveImpl()
-        {
-            return false;
-        }
+        protected override bool IsArrayImpl() => false;
 
-        protected override bool IsValueTypeImpl()
-        {
-            return true;
-        }
+        protected override bool IsPrimitiveImpl() => false;
 
-        protected override bool IsByRefImpl()
-        {
-            return false;
-        }
+        protected override bool IsValueTypeImpl() => true;
 
-        protected override bool IsPointerImpl()
-        {
-            return false;
-        }
+        protected override bool IsByRefImpl() => false;
 
-        protected override bool IsCOMObjectImpl()
-        {
-            return false;
-        }
+        protected override bool IsPointerImpl() => false;
 
-        public override bool IsConstructedGenericType
-        {
-            get
-            {
-                return false;
-            }
-        }
+        protected override bool IsCOMObjectImpl() => false;
 
-        public override Type GetElementType()
-        {
-            return m_typeBuilder.GetElementType();
-        }
+        public override bool IsConstructedGenericType => false;
 
-        protected override bool HasElementTypeImpl()
-        {
-            return m_typeBuilder.HasElementType;
-        }
+        public override Type GetElementType() => _typeBuilder.GetElementType();
 
-        // Legacy: JScript needs it.
-        public override Type GetEnumUnderlyingType()
-        {
-            return m_underlyingField.FieldType;
-        }
+        protected override bool HasElementTypeImpl() => _typeBuilder.HasElementType;
 
-        public override Type UnderlyingSystemType
-        {
-            get
-            {
-                return GetEnumUnderlyingType();
-            }
-        }
+        public override Type GetEnumUnderlyingType() => _underlyingField.FieldType;
 
-        //ICustomAttributeProvider
+        public override Type UnderlyingSystemType => GetEnumUnderlyingType();
+
         public override object[] GetCustomAttributes(bool inherit)
         {
-            return m_typeBuilder.GetCustomAttributes(inherit);
+            return _typeBuilder.GetCustomAttributes(inherit);
         }
-
-        // Return a custom attribute identified by Type
+    
         public override object[] GetCustomAttributes(Type attributeType, bool inherit)
         {
-            return m_typeBuilder.GetCustomAttributes(attributeType, inherit);
+            return _typeBuilder.GetCustomAttributes(attributeType, inherit);
         }
-
-        // Use this function if client decides to form the custom attribute blob themselves
-
+        
         public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
         {
-            m_typeBuilder.SetCustomAttribute(con, binaryAttribute);
+            _typeBuilder.SetCustomAttribute(con, binaryAttribute);
         }
-
-        // Use this function if client wishes to build CustomAttribute using CustomAttributeBuilder
+        
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
-            m_typeBuilder.SetCustomAttribute(customBuilder);
+            _typeBuilder.SetCustomAttribute(customBuilder);
         }
 
-        // Return the class that declared this Field.
-        public override Type DeclaringType
-        {
-            get { return m_typeBuilder.DeclaringType; }
-        }
+        public override Type DeclaringType => _typeBuilder.DeclaringType;
 
-        // Return the class that was used to obtain this field.
+        public override Type ReflectedType => _typeBuilder.ReflectedType;
 
-        public override Type ReflectedType
-        {
-            get { return m_typeBuilder.ReflectedType; }
-        }
-
-
-        // Returns true if one or more instance of attributeType is defined on this member. 
         public override bool IsDefined(Type attributeType, bool inherit)
         {
-            return m_typeBuilder.IsDefined(attributeType, inherit);
+            return _typeBuilder.IsDefined(attributeType, inherit);
         }
 
-        /*****************************************************
-         * 
-         * private/protected functions
-         * 
-         */
+        public override Type MakePointerType() => SymbolType.FormCompoundType("*", this, 0);
 
-        public override Type MakePointerType()
-        {
-            return SymbolType.FormCompoundType("*", this, 0);
-        }
+        public override Type MakeByRefType() => SymbolType.FormCompoundType("&", this, 0);
 
-        public override Type MakeByRefType()
-        {
-            return SymbolType.FormCompoundType("&", this, 0);
-        }
-
-        public override Type MakeArrayType()
-        {
-            return SymbolType.FormCompoundType("[]", this, 0);
-        }
+        public override Type MakeArrayType() => SymbolType.FormCompoundType("[]", this, 0);
 
         public override Type MakeArrayType(int rank)
         {
             if (rank <= 0)
+            {
                 throw new IndexOutOfRangeException();
+            }
 
             string szrank = "";
             if (rank == 1)
@@ -379,7 +247,9 @@ namespace System.Reflection.Emit
             else
             {
                 for (int i = 1; i < rank; i++)
+                {
                     szrank += ",";
+                }
             }
 
             string s = string.Format(CultureInfo.InvariantCulture, "[{0}]", szrank); // [,,]
@@ -397,19 +267,14 @@ namespace System.Reflection.Emit
         {
             // Client should not set any bits other than the visibility bits.
             if ((visibility & ~TypeAttributes.VisibilityMask) != 0)
+            {
                 throw new ArgumentException(SR.Argument_ShouldOnlySetVisibilityFlags, nameof(name));
-            m_typeBuilder = new TypeBuilder(name, visibility | TypeAttributes.Sealed, typeof(System.Enum), null, module, PackingSize.Unspecified, TypeBuilder.UnspecifiedTypeSize, null);
+            }
+
+            _typeBuilder = new TypeBuilder(name, visibility | TypeAttributes.Sealed, typeof(Enum), null, module, PackingSize.Unspecified, TypeBuilder.UnspecifiedTypeSize, null);
 
             // Define the underlying field for the enum. It will be a non-static, private field with special name bit set. 
-            m_underlyingField = m_typeBuilder.DefineField("value__", underlyingType, FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
+            _underlyingField = _typeBuilder.DefineField("value__", underlyingType, FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
         }
-
-        /*****************************************************
-         * 
-         * private data members
-         * 
-         */
-        internal TypeBuilder m_typeBuilder;
-        private FieldBuilder m_underlyingField;
     }
 }

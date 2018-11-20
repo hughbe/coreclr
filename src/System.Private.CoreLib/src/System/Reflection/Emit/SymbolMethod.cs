@@ -2,29 +2,21 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-// 
+using System.Globalization;
 
 namespace System.Reflection.Emit
 {
-    using System.Runtime.InteropServices;
-    using System;
-    using System.Reflection;
-    using CultureInfo = System.Globalization.CultureInfo;
-
     internal sealed class SymbolMethod : MethodInfo
     {
-        #region Private Data Members
-        private ModuleBuilder m_module;
-        private Type m_containingType;
-        private string m_name;
-        private CallingConventions m_callingConvention;
-        private Type m_returnType;
-        private MethodToken m_mdMethod;
-        private Type[] m_parameterTypes;
-        private SignatureHelper m_signature;
-        #endregion
+        private readonly ModuleBuilder _module;
+        private readonly Type _containingType;
+        private readonly string _name;
+        private readonly CallingConventions _callingConvention;
+        private readonly Type _returnType;
+        private MethodToken _methodToken;
+        private readonly Type[] _parameterTypes;
+        private readonly SignatureHelper _signature;
 
-        #region Constructor
         internal SymbolMethod(ModuleBuilder mod, MethodToken token, Type arrayClass, string methodName,
             CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
         {
@@ -35,66 +27,47 @@ namespace System.Reflection.Emit
             // passed into it is this MethodToken. The MethodToken was forged using a TypeSpec for an Array type and
             // the name of the method on Array. 
             // As none of the methods on Array have CustomModifiers their is no need to pass those around in here.
-            m_mdMethod = token;
+            _methodToken = token;
 
             // The ParameterTypes are also a bit interesting in that they may be unbaked TypeBuilders.
-            m_returnType = returnType;
+            _returnType = returnType;
             if (parameterTypes != null)
             {
-                m_parameterTypes = new Type[parameterTypes.Length];
-                Array.Copy(parameterTypes, 0, m_parameterTypes, 0, parameterTypes.Length);
+                _parameterTypes = new Type[parameterTypes.Length];
+                Array.Copy(parameterTypes, 0, _parameterTypes, 0, parameterTypes.Length);
             }
             else
             {
-                m_parameterTypes = Array.Empty<Type>();
+                _parameterTypes = Array.Empty<Type>();
             }
 
-            m_module = mod;
-            m_containingType = arrayClass;
-            m_name = methodName;
-            m_callingConvention = callingConvention;
+            _module = mod;
+            _containingType = arrayClass;
+            _name = methodName;
+            _callingConvention = callingConvention;
 
-            m_signature = SignatureHelper.GetMethodSigHelper(
+            _signature = SignatureHelper.GetMethodSigHelper(
                 mod, callingConvention, returnType, null, null, parameterTypes, null, null);
         }
-        #endregion
 
-        #region Internal Members
-        internal override Type[] GetParameterTypes()
-        {
-            return m_parameterTypes;
-        }
+        internal override Type[] GetParameterTypes() => _parameterTypes;
 
         internal MethodToken GetToken(ModuleBuilder mod)
         {
-            return mod.GetArrayMethodToken(m_containingType, m_name, m_callingConvention, m_returnType, m_parameterTypes);
+            return mod.GetArrayMethodToken(_containingType, _name, _callingConvention, _returnType, _parameterTypes);
         }
-
-        #endregion
-
-        #region MemberInfo Overrides
+        
         public override Module Module
         {
-            get { return m_module; }
+            get { return _module; }
         }
 
-        public override Type ReflectedType
-        {
-            get { return m_containingType as Type; }
-        }
+        public override Type ReflectedType => _containingType as Type;
 
-        public override string Name
-        {
-            get { return m_name; }
-        }
+        public override string Name => _name;
 
-        public override Type DeclaringType
-        {
-            get { return m_containingType; }
-        }
-        #endregion
+        public override Type DeclaringType => _containingType;
 
-        #region MethodBase Overrides
         public override ParameterInfo[] GetParameters()
         {
             throw new NotSupportedException(SR.NotSupported_SymbolMethod);
@@ -107,47 +80,27 @@ namespace System.Reflection.Emit
 
         public override MethodAttributes Attributes
         {
-            get { throw new NotSupportedException(SR.NotSupported_SymbolMethod); }
+            get => throw new NotSupportedException(SR.NotSupported_SymbolMethod);
         }
 
-        public override CallingConventions CallingConvention
-        {
-            get { return m_callingConvention; }
-        }
+        public override CallingConventions CallingConvention => _callingConvention;
 
         public override RuntimeMethodHandle MethodHandle
         {
-            get { throw new NotSupportedException(SR.NotSupported_SymbolMethod); }
+            get => throw new NotSupportedException(SR.NotSupported_SymbolMethod);
         }
 
-        #endregion
+        public override Type ReturnType => _returnType;
 
-        #region MethodInfo Overrides
-        public override Type ReturnType
-        {
-            get
-            {
-                return m_returnType;
-            }
-        }
-
-        public override ICustomAttributeProvider ReturnTypeCustomAttributes
-        {
-            get { return null; }
-        }
+        public override ICustomAttributeProvider ReturnTypeCustomAttributes => null;
 
         public override object Invoke(object obj, BindingFlags invokeAttr, Binder binder, object[] parameters, CultureInfo culture)
         {
             throw new NotSupportedException(SR.NotSupported_SymbolMethod);
         }
 
-        public override MethodInfo GetBaseDefinition()
-        {
-            return this;
-        }
-        #endregion
+        public override MethodInfo GetBaseDefinition() => this;
 
-        #region ICustomAttributeProvider Implementation
         public override object[] GetCustomAttributes(bool inherit)
         {
             throw new NotSupportedException(SR.NotSupported_SymbolMethod);
@@ -163,19 +116,8 @@ namespace System.Reflection.Emit
             throw new NotSupportedException(SR.NotSupported_SymbolMethod);
         }
 
-        #endregion
+        public Module GetModule() => _module;
 
-        #region Public Members
-        public Module GetModule()
-        {
-            return m_module;
-        }
-
-        public MethodToken GetToken()
-        {
-            return m_mdMethod;
-        }
-
-        #endregion
+        public MethodToken GetToken() => _methodToken;
     }
 }

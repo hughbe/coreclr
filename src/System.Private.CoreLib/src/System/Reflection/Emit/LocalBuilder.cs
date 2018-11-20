@@ -2,57 +2,38 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
-using System.Reflection;
-using System.Runtime.InteropServices;
-
 namespace System.Reflection.Emit
 {
     public sealed class LocalBuilder : LocalVariableInfo
     {
-        #region Private Data Members
-        private int m_localIndex;
-        private Type m_localType;
-        private MethodInfo m_methodBuilder;
-        private bool m_isPinned;
-        #endregion
+        private readonly int _index;
+        private readonly Type _type;
+        private readonly MethodInfo _methodBuilder;
+        private readonly bool _isPinned;
 
-        #region Constructor
         internal LocalBuilder(int localIndex, Type localType, MethodInfo methodBuilder)
-            : this(localIndex, localType, methodBuilder, false) { }
+            : this(localIndex, localType, methodBuilder, false)
+        {
+        }
+
         internal LocalBuilder(int localIndex, Type localType, MethodInfo methodBuilder, bool isPinned)
         {
-            m_isPinned = isPinned;
-            m_localIndex = localIndex;
-            m_localType = localType;
-            m_methodBuilder = methodBuilder;
+            _isPinned = isPinned;
+            _index = localIndex;
+            _type = localType;
+            _methodBuilder = methodBuilder;
         }
-        #endregion
 
-        #region Internal Members
-        internal int GetLocalIndex()
-        {
-            return m_localIndex;
-        }
-        internal MethodInfo GetMethodBuilder()
-        {
-            return m_methodBuilder;
-        }
-        #endregion
+        internal int GetLocalIndex() => _index;
 
-        #region LocalVariableInfo Override
-        public override bool IsPinned { get { return m_isPinned; } }
-        public override Type LocalType
-        {
-            get
-            {
-                return m_localType;
-            }
-        }
-        public override int LocalIndex { get { return m_localIndex; } }
-        #endregion
+        internal MethodInfo GetMethodBuilder() => _methodBuilder;
 
-        #region Public Members
+        public override bool IsPinned => _isPinned;
+
+        public override Type LocalType => _type;
+
+        public override int LocalIndex => _index;
+
         public void SetLocalSymInfo(string name)
         {
             SetLocalSymInfo(name, 0, 0);
@@ -60,18 +41,14 @@ namespace System.Reflection.Emit
 
         public void SetLocalSymInfo(string name, int startOffset, int endOffset)
         {
-            ModuleBuilder dynMod;
-            SignatureHelper sigHelp;
-            int sigLength;
-            byte[] signature;
-            byte[] mungedSig;
-            int index;
-
-            MethodBuilder methodBuilder = m_methodBuilder as MethodBuilder;
+            MethodBuilder methodBuilder = _methodBuilder as MethodBuilder;
             if (methodBuilder == null)
+            {
                 // it's a light code gen entity
                 throw new NotSupportedException();
-            dynMod = (ModuleBuilder)methodBuilder.Module;
+            }
+
+            ModuleBuilder dynMod = (ModuleBuilder)methodBuilder.Module;
             if (methodBuilder.IsTypeCreated())
             {
                 // cannot change method after its containing type has been created
@@ -85,26 +62,26 @@ namespace System.Reflection.Emit
                 throw new InvalidOperationException(SR.InvalidOperation_NotADebugModule);
             }
 
-            sigHelp = SignatureHelper.GetFieldSigHelper(dynMod);
-            sigHelp.AddArgument(m_localType);
-            signature = sigHelp.InternalGetSignature(out sigLength);
+            SignatureHelper sigHelp = SignatureHelper.GetFieldSigHelper(dynMod);
+            sigHelp.AddArgument(_type);
+            byte[] signature = sigHelp.InternalGetSignature(out int sigLength);
 
             // The symbol store doesn't want the calling convention on the
             // front of the signature, but InternalGetSignature returns
             // the callinging convention. So we strip it off. This is a
             // bit unfortunate, since it means that we need to allocate
             // yet another array of bytes...  
-            mungedSig = new byte[sigLength - 1];
+            byte[] mungedSig = new byte[sigLength - 1];
             Buffer.BlockCopy(signature, 1, mungedSig, 0, sigLength - 1);
 
-            index = methodBuilder.GetILGenerator().m_ScopeTree.GetCurrentActiveScopeIndex();
+            int index = methodBuilder.GetILGenerator().m_ScopeTree.GetCurrentActiveScopeIndex();
             if (index == -1)
             {
                 // top level scope information is kept with methodBuilder
-                methodBuilder.m_localSymInfo.AddLocalSymInfo(
+                methodBuilder._localSymbolInfo.AddLocalSymInfo(
                      name,
                      mungedSig,
-                     m_localIndex,
+                     _index,
                      startOffset,
                      endOffset);
             }
@@ -113,12 +90,10 @@ namespace System.Reflection.Emit
                 methodBuilder.GetILGenerator().m_ScopeTree.AddLocalSymInfoToCurrentScope(
                      name,
                      mungedSig,
-                     m_localIndex,
+                     _index,
                      startOffset,
                      endOffset);
             }
         }
-        #endregion
     }
 }
-

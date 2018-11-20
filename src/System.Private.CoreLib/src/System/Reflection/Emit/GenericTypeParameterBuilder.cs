@@ -2,85 +2,55 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-// 
-
-using System;
-using System.Reflection;
-using System.Collections;
-using System.Collections.Generic;
 using System.Globalization;
 
 namespace System.Reflection.Emit
 {
     public sealed class GenericTypeParameterBuilder : TypeInfo
     {
-        public override bool IsAssignableFrom(System.Reflection.TypeInfo typeInfo)
-        {
-            if (typeInfo == null) return false;
-            return IsAssignableFrom(typeInfo.AsType());
-        }
+        internal TypeBuilder _type;
 
-        #region Private Data Members
-        internal TypeBuilder m_type;
-        #endregion
-
-        #region Constructor
         internal GenericTypeParameterBuilder(TypeBuilder type)
         {
-            m_type = type;
+            _type = type;
         }
-        #endregion
 
-        #region Object Overrides
-        public override string ToString()
-        {
-            return m_type.Name;
-        }
+        public override string ToString() => _type.Name;
+
         public override bool Equals(object o)
         {
-            GenericTypeParameterBuilder g = o as GenericTypeParameterBuilder;
-
-            if (g == null)
-                return false;
-
-            return object.ReferenceEquals(g.m_type, m_type);
+            return o is GenericTypeParameterBuilder g && ReferenceEquals(g._type, _type);
         }
-        public override int GetHashCode() { return m_type.GetHashCode(); }
-        #endregion
 
-        #region MemberInfo Overrides
-        public override Type DeclaringType { get { return m_type.DeclaringType; } }
+        public override int GetHashCode() => _type.GetHashCode();
 
-        public override Type ReflectedType { get { return m_type.ReflectedType; } }
+        public override Type DeclaringType => _type.DeclaringType;
 
-        public override string Name { get { return m_type.Name; } }
+        public override Type ReflectedType => _type.ReflectedType;
 
-        public override Module Module { get { return m_type.Module; } }
+        public override string Name => _type.Name;
 
-        internal int MetadataTokenInternal { get { return m_type.MetadataTokenInternal; } }
-        #endregion
+        public override Module Module => _type.Module;
 
-        #region Type Overrides
+        internal int MetadataTokenInternal => _type.MetadataTokenInternal;
 
-        public override Type MakePointerType()
+        public override bool IsAssignableFrom(TypeInfo typeInfo)
         {
-            return SymbolType.FormCompoundType("*", this, 0);
+            return typeInfo != null && IsAssignableFrom(typeInfo.AsType());
         }
 
-        public override Type MakeByRefType()
-        {
-            return SymbolType.FormCompoundType("&", this, 0);
-        }
+        public override Type MakePointerType() => SymbolType.FormCompoundType("*", this, 0);
 
-        public override Type MakeArrayType()
-        {
-            return SymbolType.FormCompoundType("[]", this, 0);
-        }
+        public override Type MakeByRefType() => SymbolType.FormCompoundType("&", this, 0);
+
+        public override Type MakeArrayType() => SymbolType.FormCompoundType("[]", this, 0);
 
         public override Type MakeArrayType(int rank)
         {
             if (rank <= 0)
+            {
                 throw new IndexOutOfRangeException();
+            }
 
             string szrank = "";
             if (rank == 1)
@@ -90,153 +60,218 @@ namespace System.Reflection.Emit
             else
             {
                 for (int i = 1; i < rank; i++)
+                {
                     szrank += ",";
+                }
             }
 
             string s = string.Format(CultureInfo.InvariantCulture, "[{0}]", szrank); // [,,]
-            SymbolType st = SymbolType.FormCompoundType(s, this, 0) as SymbolType;
-            return st;
+            return SymbolType.FormCompoundType(s, this, 0) as SymbolType;
         }
 
-        public override Guid GUID { get { throw new NotSupportedException(); } }
+        public override Guid GUID => throw new NotSupportedException();
 
-        public override object InvokeMember(string name, BindingFlags invokeAttr, Binder binder, object target, object[] args, ParameterModifier[] modifiers, CultureInfo culture, string[] namedParameters) { throw new NotSupportedException(); }
+        public override object InvokeMember(string name, BindingFlags invokeAttr, Binder binder, object target, object[] args, ParameterModifier[] modifiers, CultureInfo culture, string[] namedParameters)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override Assembly Assembly { get { return m_type.Assembly; } }
+        public override Assembly Assembly => _type.Assembly;
 
-        public override RuntimeTypeHandle TypeHandle { get { throw new NotSupportedException(); } }
+        public override RuntimeTypeHandle TypeHandle => throw new NotSupportedException();
 
-        public override string FullName { get { return null; } }
+        public override string FullName => null;
 
-        public override string Namespace { get { return null; } }
+        public override string Namespace => null;
 
-        public override string AssemblyQualifiedName { get { return null; } }
+        public override string AssemblyQualifiedName => null;
 
-        public override Type BaseType { get { return m_type.BaseType; } }
+        public override Type BaseType => _type.BaseType;
 
-        protected override ConstructorInfo GetConstructorImpl(BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers) { throw new NotSupportedException(); }
+        protected override ConstructorInfo GetConstructorImpl(BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override ConstructorInfo[] GetConstructors(BindingFlags bindingAttr) { throw new NotSupportedException(); }
+        public override ConstructorInfo[] GetConstructors(BindingFlags bindingAttr)
+        {
+            throw new NotSupportedException();
+        }
 
-        protected override MethodInfo GetMethodImpl(string name, BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers) { throw new NotSupportedException(); }
+        protected override MethodInfo GetMethodImpl(string name, BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override MethodInfo[] GetMethods(BindingFlags bindingAttr) { throw new NotSupportedException(); }
+        public override MethodInfo[] GetMethods(BindingFlags bindingAttr)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override FieldInfo GetField(string name, BindingFlags bindingAttr) { throw new NotSupportedException(); }
+        public override FieldInfo GetField(string name, BindingFlags bindingAttr)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override FieldInfo[] GetFields(BindingFlags bindingAttr) { throw new NotSupportedException(); }
+        public override FieldInfo[] GetFields(BindingFlags bindingAttr)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override Type GetInterface(string name, bool ignoreCase) { throw new NotSupportedException(); }
+        public override Type GetInterface(string name, bool ignoreCase)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override Type[] GetInterfaces() { throw new NotSupportedException(); }
+        public override Type[] GetInterfaces()
+        {
+            throw new NotSupportedException();
+        }
 
-        public override EventInfo GetEvent(string name, BindingFlags bindingAttr) { throw new NotSupportedException(); }
+        public override EventInfo GetEvent(string name, BindingFlags bindingAttr)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override EventInfo[] GetEvents() { throw new NotSupportedException(); }
+        public override EventInfo[] GetEvents()
+        {
+            throw new NotSupportedException();
+        }
 
-        protected override PropertyInfo GetPropertyImpl(string name, BindingFlags bindingAttr, Binder binder, Type returnType, Type[] types, ParameterModifier[] modifiers) { throw new NotSupportedException(); }
+        protected override PropertyInfo GetPropertyImpl(string name, BindingFlags bindingAttr, Binder binder, Type returnType, Type[] types, ParameterModifier[] modifiers)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override PropertyInfo[] GetProperties(BindingFlags bindingAttr) { throw new NotSupportedException(); }
+        public override PropertyInfo[] GetProperties(BindingFlags bindingAttr)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override Type[] GetNestedTypes(BindingFlags bindingAttr) { throw new NotSupportedException(); }
+        public override Type[] GetNestedTypes(BindingFlags bindingAttr)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override Type GetNestedType(string name, BindingFlags bindingAttr) { throw new NotSupportedException(); }
+        public override Type GetNestedType(string name, BindingFlags bindingAttr)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override MemberInfo[] GetMember(string name, MemberTypes type, BindingFlags bindingAttr) { throw new NotSupportedException(); }
+        public override MemberInfo[] GetMember(string name, MemberTypes type, BindingFlags bindingAttr)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override InterfaceMapping GetInterfaceMap(Type interfaceType) { throw new NotSupportedException(); }
+        public override InterfaceMapping GetInterfaceMap(Type interfaceType)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override EventInfo[] GetEvents(BindingFlags bindingAttr) { throw new NotSupportedException(); }
+        public override EventInfo[] GetEvents(BindingFlags bindingAttr)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override MemberInfo[] GetMembers(BindingFlags bindingAttr) { throw new NotSupportedException(); }
+        public override MemberInfo[] GetMembers(BindingFlags bindingAttr)
+        {
+            throw new NotSupportedException();
+        }
 
-        protected override TypeAttributes GetAttributeFlagsImpl() { return TypeAttributes.Public; }
+        protected override TypeAttributes GetAttributeFlagsImpl() => TypeAttributes.Public;
 
         public override bool IsTypeDefinition => false;
 
         public override bool IsSZArray => false;
 
-        protected override bool IsArrayImpl() { return false; }
+        protected override bool IsArrayImpl() => false;
 
-        protected override bool IsByRefImpl() { return false; }
+        protected override bool IsByRefImpl() => false;
 
-        protected override bool IsPointerImpl() { return false; }
+        protected override bool IsPointerImpl() => false;
 
-        protected override bool IsPrimitiveImpl() { return false; }
+        protected override bool IsPrimitiveImpl() => false;
 
-        protected override bool IsCOMObjectImpl() { return false; }
+        protected override bool IsCOMObjectImpl() => false;
 
-        public override Type GetElementType() { throw new NotSupportedException(); }
+        public override Type GetElementType() => throw new NotSupportedException();
 
-        protected override bool HasElementTypeImpl() { return false; }
+        protected override bool HasElementTypeImpl() => false;
 
-        public override Type UnderlyingSystemType { get { return this; } }
+        public override Type UnderlyingSystemType => this;
 
-        public override Type[] GetGenericArguments() { throw new InvalidOperationException(); }
+        public override Type[] GetGenericArguments() => throw new InvalidOperationException();
 
-        public override bool IsGenericTypeDefinition { get { return false; } }
+        public override bool IsGenericTypeDefinition => false;
 
-        public override bool IsGenericType { get { return false; } }
+        public override bool IsGenericType => false;
 
-        public override bool IsGenericParameter { get { return true; } }
+        public override bool IsGenericParameter => true;
 
-        public override bool IsConstructedGenericType { get { return false; } }
+        public override bool IsConstructedGenericType => false;
 
-        public override int GenericParameterPosition { get { return m_type.GenericParameterPosition; } }
+        public override int GenericParameterPosition => _type.GenericParameterPosition;
 
-        public override bool ContainsGenericParameters { get { return m_type.ContainsGenericParameters; } }
+        public override bool ContainsGenericParameters => _type.ContainsGenericParameters;
 
-        public override GenericParameterAttributes GenericParameterAttributes { get { return m_type.GenericParameterAttributes; } }
+        public override GenericParameterAttributes GenericParameterAttributes => _type.GenericParameterAttributes;
 
-        public override MethodBase DeclaringMethod { get { return m_type.DeclaringMethod; } }
+        public override MethodBase DeclaringMethod => _type.DeclaringMethod;
 
-        public override Type GetGenericTypeDefinition() { throw new InvalidOperationException(); }
+        public override Type GetGenericTypeDefinition() => throw new InvalidOperationException();
 
-        public override Type MakeGenericType(params Type[] typeArguments) { throw new InvalidOperationException(SR.Format(SR.Arg_NotGenericTypeDefinition, this)); }
+        public override Type MakeGenericType(params Type[] typeArguments)
+        {
+            throw new InvalidOperationException(SR.Format(SR.Arg_NotGenericTypeDefinition, this));
+        }
 
-        protected override bool IsValueTypeImpl() { return false; }
+        protected override bool IsValueTypeImpl() => false;
 
-        public override bool IsAssignableFrom(Type c) { throw new NotSupportedException(); }
+        public override bool IsAssignableFrom(Type c) => throw new NotSupportedException();
 
-        public override bool IsSubclassOf(Type c) { throw new NotSupportedException(); }
-        #endregion
+        public override bool IsSubclassOf(Type c) => throw new NotSupportedException();
 
-        #region ICustomAttributeProvider Implementation
-        public override object[] GetCustomAttributes(bool inherit) { throw new NotSupportedException(); }
+        public override object[] GetCustomAttributes(bool inherit)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override object[] GetCustomAttributes(Type attributeType, bool inherit) { throw new NotSupportedException(); }
+        public override object[] GetCustomAttributes(Type attributeType, bool inherit)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override bool IsDefined(Type attributeType, bool inherit) { throw new NotSupportedException(); }
-        #endregion
+        public override bool IsDefined(Type attributeType, bool inherit)
+        {
+            throw new NotSupportedException();
+        }
 
-        #region Public Members
         public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
         {
-            m_type.SetGenParamCustomAttribute(con, binaryAttribute);
+            _type.SetGenParamCustomAttribute(con, binaryAttribute);
         }
 
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
-            m_type.SetGenParamCustomAttribute(customBuilder);
+            _type.SetGenParamCustomAttribute(customBuilder);
         }
 
         public void SetBaseTypeConstraint(Type baseTypeConstraint)
         {
-            m_type.CheckContext(baseTypeConstraint);
-            m_type.SetParent(baseTypeConstraint);
+            _type.Module.CheckContext(baseTypeConstraint);
+            _type.SetParent(baseTypeConstraint);
         }
 
         public void SetInterfaceConstraints(params Type[] interfaceConstraints)
         {
-            m_type.CheckContext(interfaceConstraints);
-            m_type.SetInterfaces(interfaceConstraints);
+            _type.Module.CheckContext(interfaceConstraints);
+            _type.SetInterfaces(interfaceConstraints);
         }
 
         public void SetGenericParameterAttributes(GenericParameterAttributes genericParameterAttributes)
         {
-            m_type.SetGenParamAttributes(genericParameterAttributes);
+            _type.SetGenParamAttributes(genericParameterAttributes);
         }
-        #endregion
     }
 }
 

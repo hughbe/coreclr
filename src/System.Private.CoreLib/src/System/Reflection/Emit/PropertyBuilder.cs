@@ -2,56 +2,55 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-/*============================================================
-**
-** 
-** 
-**
-**
-** Propertybuilder is for client to define properties for a class
-**
-** 
-===========================================================*/
+using System.Globalization;
 
 namespace System.Reflection.Emit
 {
-    using System;
-    using System.Reflection;
-    using CultureInfo = System.Globalization.CultureInfo;
-    using System.Runtime.InteropServices;
-
-    // 
-    // A PropertyBuilder is always associated with a TypeBuilder.  The TypeBuilder.DefineProperty
-    // method will return a new PropertyBuilder to a client.
-    // 
+    /// <summary> 
+    /// A PropertyBuilder is always associated with a TypeBuilder.  The TypeBuilder.DefineProperty
+    /// method will return a new PropertyBuilder to a client.
+    /// </summary>
     public sealed class PropertyBuilder : PropertyInfo
     {
-        // Constructs a PropertyBuilder.  
-        //
+        private string _name;
+        private PropertyToken _propertyToken;
+        private ModuleBuilder _noduleBuilder;
+        private SignatureHelper _signature;
+        private PropertyAttributes _attributes;
+        private Type _returnType;
+        private MethodInfo _getMethod;
+        private MethodInfo _setMethod;
+        private TypeBuilder _containingType;
+
         internal PropertyBuilder(
-            ModuleBuilder mod,            // the module containing this PropertyBuilder
-            string name,           // property name
-            SignatureHelper sig,            // property signature descriptor info
-            PropertyAttributes attr,           // property attribute such as DefaultProperty, Bindable, DisplayBind, etc
-            Type returnType,     // return type of the property.
-            PropertyToken prToken,        // the metadata token for this property
-            TypeBuilder containingType) // the containing type
+            ModuleBuilder mod,
+            string name,
+            SignatureHelper sig,
+            PropertyAttributes attr,
+            Type returnType
+            PropertyToken prToken,
+            TypeBuilder containingType)
         {
             if (name == null)
+            {
                 throw new ArgumentNullException(nameof(name));
+            }
             if (name.Length == 0)
+            {
                 throw new ArgumentException(SR.Argument_EmptyName, nameof(name));
+            }
             if (name[0] == '\0')
+            {
                 throw new ArgumentException(SR.Argument_IllegalName, nameof(name));
+            }
 
-            m_name = name;
-            m_moduleBuilder = mod;
-            m_signature = sig;
-            m_attributes = attr;
-            m_returnType = returnType;
-            m_prToken = prToken;
-            m_tkProperty = prToken.Token;
-            m_containingType = containingType;
+            _name = name;
+            _noduleBuilder = mod;
+            _signature = sig;
+            _attributes = attr;
+            _returnType = returnType;
+            _propertyToken = prToken;
+            _containingType = containingType;
         }
 
         /// <summary>
@@ -59,30 +58,18 @@ namespace System.Reflection.Emit
         /// </summary>
         public void SetConstant(object defaultValue)
         {
-            m_containingType.ThrowIfCreated();
+            _containingType.ThrowIfCreated();
 
             TypeBuilder.SetConstantValue(
-                m_moduleBuilder,
-                m_prToken.Token,
-                m_returnType,
+                _noduleBuilder,
+                _propertyToken.Token,
+                _returnType,
                 defaultValue);
         }
 
+        public PropertyToken PropertyToken => _propertyToken;
 
-        // Return the Token for this property within the TypeBuilder that the
-        // property is defined within.
-        public PropertyToken PropertyToken
-        {
-            get { return m_prToken; }
-        }
-
-        public override Module Module
-        {
-            get
-            {
-                return m_containingType.Module;
-            }
-        }
+        public override Module Module => _containingType.Module;
 
         private void SetMethodSemantics(MethodBuilder mdBuilder, MethodSemanticsAttributes semantics)
         {
@@ -91,10 +78,10 @@ namespace System.Reflection.Emit
                 throw new ArgumentNullException(nameof(mdBuilder));
             }
 
-            m_containingType.ThrowIfCreated();
+            _containingType.ThrowIfCreated();
             TypeBuilder.DefineMethodSemantics(
-                m_moduleBuilder.GetNativeHandle(),
-                m_prToken.Token,
+                _noduleBuilder.GetNativeHandle(),
+                _propertyToken.Token,
                 semantics,
                 mdBuilder.GetToken().Token);
         }
@@ -102,13 +89,13 @@ namespace System.Reflection.Emit
         public void SetGetMethod(MethodBuilder mdBuilder)
         {
             SetMethodSemantics(mdBuilder, MethodSemanticsAttributes.Getter);
-            m_getMethod = mdBuilder;
+            _getMethod = mdBuilder;
         }
 
         public void SetSetMethod(MethodBuilder mdBuilder)
         {
             SetMethodSemantics(mdBuilder, MethodSemanticsAttributes.Setter);
-            m_setMethod = mdBuilder;
+            _setMethod = mdBuilder;
         }
 
         public void AddOtherMethod(MethodBuilder mdBuilder)
@@ -116,36 +103,37 @@ namespace System.Reflection.Emit
             SetMethodSemantics(mdBuilder, MethodSemanticsAttributes.Other);
         }
 
-        // Use this function if client decides to form the custom attribute blob themselves
-
         public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
         {
             if (con == null)
+            {
                 throw new ArgumentNullException(nameof(con));
+            }
             if (binaryAttribute == null)
+            {
                 throw new ArgumentNullException(nameof(binaryAttribute));
+            }
 
-            m_containingType.ThrowIfCreated();
+            _containingType.ThrowIfCreated();
             TypeBuilder.DefineCustomAttribute(
-                m_moduleBuilder,
-                m_prToken.Token,
-                m_moduleBuilder.GetConstructorToken(con).Token,
+                _noduleBuilder,
+                _propertyToken.Token,
+                _noduleBuilder.GetConstructorToken(con).Token,
                 binaryAttribute,
                 false, false);
         }
 
-        // Use this function if client wishes to build CustomAttribute using CustomAttributeBuilder
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
             if (customBuilder == null)
             {
                 throw new ArgumentNullException(nameof(customBuilder));
             }
-            m_containingType.ThrowIfCreated();
-            customBuilder.CreateCustomAttribute(m_moduleBuilder, m_prToken.Token);
+
+            _containingType.ThrowIfCreated();
+            customBuilder.CreateCustomAttribute(_noduleBuilder, _propertyToken.Token);
         }
 
-        // Not supported functions in dynamic module.
         public override object GetValue(object obj, object[] index)
         {
             throw new NotSupportedException(SR.NotSupported_DynamicModule);
@@ -173,21 +161,29 @@ namespace System.Reflection.Emit
 
         public override MethodInfo GetGetMethod(bool nonPublic)
         {
-            if (nonPublic || m_getMethod == null)
-                return m_getMethod;
-            // now check to see if m_getMethod is public
-            if ((m_getMethod.Attributes & MethodAttributes.Public) == MethodAttributes.Public)
-                return m_getMethod;
+            if (nonPublic || _getMethod == null)
+            {
+                return _getMethod;
+            }
+            if ((_getMethod.Attributes & MethodAttributes.Public) == MethodAttributes.Public)
+            {
+                return _getMethod;
+            }
+
             return null;
         }
 
         public override MethodInfo GetSetMethod(bool nonPublic)
         {
-            if (nonPublic || m_setMethod == null)
-                return m_setMethod;
-            // now check to see if m_setMethod is public
-            if ((m_setMethod.Attributes & MethodAttributes.Public) == MethodAttributes.Public)
-                return m_setMethod;
+            if (nonPublic || _setMethod == null)
+            {
+                return _setMethod;
+            }
+            if ((_setMethod.Attributes & MethodAttributes.Public) == MethodAttributes.Public)
+            {
+                return _setMethod;
+            }
+
             return null;
         }
 
@@ -196,25 +192,13 @@ namespace System.Reflection.Emit
             throw new NotSupportedException(SR.NotSupported_DynamicModule);
         }
 
-        public override Type PropertyType
-        {
-            get { return m_returnType; }
-        }
+        public override Type PropertyType => _returnType;
 
-        public override PropertyAttributes Attributes
-        {
-            get { return m_attributes; }
-        }
+        public override PropertyAttributes Attributes => _attributes;
 
-        public override bool CanRead
-        {
-            get { if (m_getMethod != null) return true; else return false; }
-        }
+        public override bool CanRead => _getMethod != null;
 
-        public override bool CanWrite
-        {
-            get { if (m_setMethod != null) return true; else return false; }
-        }
+        public override bool CanWrite => _setMethod != null;
 
         public override object[] GetCustomAttributes(bool inherit)
         {
@@ -231,31 +215,10 @@ namespace System.Reflection.Emit
             throw new NotSupportedException(SR.NotSupported_DynamicModule);
         }
 
-        public override string Name
-        {
-            get { return m_name; }
-        }
+        public override string Name => _name;
 
-        public override Type DeclaringType
-        {
-            get { return m_containingType; }
-        }
+        public override Type DeclaringType => _containingType;
 
-        public override Type ReflectedType
-        {
-            get { return m_containingType; }
-        }
-
-        // These are package private so that TypeBuilder can access them.
-        private string m_name;                // The name of the property
-        private PropertyToken m_prToken;            // The token of this property
-        private int m_tkProperty;
-        private ModuleBuilder m_moduleBuilder;
-        private SignatureHelper m_signature;
-        private PropertyAttributes m_attributes;        // property's attribute flags
-        private Type m_returnType;        // property's return type
-        private MethodInfo m_getMethod;
-        private MethodInfo m_setMethod;
-        private TypeBuilder m_containingType;
+        public override Type ReflectedType => _containingType;
     }
 }

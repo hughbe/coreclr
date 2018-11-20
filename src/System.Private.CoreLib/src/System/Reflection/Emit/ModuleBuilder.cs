@@ -126,6 +126,7 @@ namespace System.Reflection.Emit
         {
             ContainingAssemblyBuilder.CheckContext(typess);
         }
+
         internal void CheckContext(params Type[] types)
         {
             ContainingAssemblyBuilder.CheckContext(types);
@@ -383,11 +384,11 @@ namespace System.Reflection.Emit
 
                 if ((motbi = method as MethodOnTypeBuilderInstantiation) != null)
                 {
-                    methDef = motbi.m_method;
+                    methDef = motbi._method;
                 }
                 else if ((cotbi = method as ConstructorOnTypeBuilderInstantiation) != null)
                 {
-                    methDef = cotbi.m_ctor;
+                    methDef = cotbi._ctor;
                 }
                 else if (method is MethodBuilder || method is ConstructorBuilder)
                 {
@@ -536,7 +537,7 @@ namespace System.Reflection.Emit
                 TypeBuilder tmpTypeBldr;
 
                 if (enumBldr != null)
-                    tmpTypeBldr = enumBldr.m_typeBuilder;
+                    tmpTypeBldr = enumBldr._typeBuilder;
                 else
                     tmpTypeBldr = (TypeBuilder)builder;
 
@@ -1064,7 +1065,7 @@ namespace System.Reflection.Emit
                 GenericTypeParameterBuilder paramBuilder = null;
 
                 EnumBuilder enumBuilder = type as EnumBuilder;
-                typeBuilder = enumBuilder != null ? enumBuilder.m_typeBuilder : type as TypeBuilder;
+                typeBuilder = enumBuilder != null ? enumBuilder._typeBuilder : type as TypeBuilder;
 
                 if (typeBuilder != null)
                 {

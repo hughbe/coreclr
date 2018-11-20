@@ -2,30 +2,18 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-/*============================================================
-**
-** 
-** 
-**
-**
-** CustomAttributeBuilder is a helper class to help building custom attribute.
-**
-** 
-===========================================================*/
-
-
-using System;
-using System.Reflection;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
-using System.Runtime.InteropServices;
-using System.Globalization;
-using System.Diagnostics;
 
 namespace System.Reflection.Emit
 {
     public class CustomAttributeBuilder
     {
+        internal ConstructorInfo _con;
+        private object[] _constructorArgs;
+        internal byte[] _blob;
+
         // public constructor to form the custom attribute with constructor and constructor
         // parameters.
         public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs)
@@ -63,7 +51,9 @@ namespace System.Reflection.Emit
                                        propertyValues, namedFields, fieldValues);
         }
 
-        // Check that a type is suitable for use in a custom attribute.
+        /// <summary>
+        /// Check that a type is suitable for use in a custom attribute.
+        /// </summary>
         private bool ValidateType(Type t)
         {
             if (t.IsPrimitive)
@@ -94,7 +84,10 @@ namespace System.Reflection.Emit
             if (t.IsArray)
             {
                 if (t.GetArrayRank() != 1)
+                {
                     return false;
+                }
+
                 return ValidateType(t.GetElementType());
             }
             return t == typeof(object);
@@ -105,51 +98,74 @@ namespace System.Reflection.Emit
                                                  FieldInfo[] namedFields, object[] fieldValues)
         {
             if (con == null)
+            {
                 throw new ArgumentNullException(nameof(con));
+            }
             if (constructorArgs == null)
+            {
                 throw new ArgumentNullException(nameof(constructorArgs));
+            }
             if (namedProperties == null)
+            {
                 throw new ArgumentNullException(nameof(namedProperties));
+            }
             if (propertyValues == null)
+            {
                 throw new ArgumentNullException(nameof(propertyValues));
+            }
             if (namedFields == null)
+            {
                 throw new ArgumentNullException(nameof(namedFields));
+            }
             if (fieldValues == null)
+            {
                 throw new ArgumentNullException(nameof(fieldValues));
+            }
             if (namedProperties.Length != propertyValues.Length)
+            {
                 throw new ArgumentException(SR.Arg_ArrayLengthsDiffer, "namedProperties, propertyValues");
+            }
             if (namedFields.Length != fieldValues.Length)
+            {
                 throw new ArgumentException(SR.Arg_ArrayLengthsDiffer, "namedFields, fieldValues");
+            }
 
             if ((con.Attributes & MethodAttributes.Static) == MethodAttributes.Static ||
                 (con.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Private)
+            {
                 throw new ArgumentException(SR.Argument_BadConstructor);
-
+            }
             if ((con.CallingConvention & CallingConventions.Standard) != CallingConventions.Standard)
+            {
                 throw new ArgumentException(SR.Argument_BadConstructorCallConv);
+            }
 
             // Cache information used elsewhere.
-            m_con = con;
-            m_constructorArgs = new object[constructorArgs.Length];
-            Array.Copy(constructorArgs, 0, m_constructorArgs, 0, constructorArgs.Length);
+            _con = con;
+            _constructorArgs = new object[constructorArgs.Length];
+            Array.Copy(constructorArgs, 0, _constructorArgs, 0, constructorArgs.Length);
 
-            Type[] paramTypes;
-            int i;
 
             // Get the types of the constructor's formal parameters.
-            paramTypes = con.GetParameterTypes();
+            Type[] paramTypes = con.GetParameterTypes();
 
             // Since we're guaranteed a non-var calling convention, the number of arguments must equal the number of parameters.
             if (paramTypes.Length != constructorArgs.Length)
+            {
                 throw new ArgumentException(SR.Argument_BadParameterCountsForConstructor);
+            }
 
             // Verify that the constructor has a valid signature (custom attributes only support a subset of our type system).
-            for (i = 0; i < paramTypes.Length; i++)
+            for (int i = 0; i < paramTypes.Length; i++)
+            {
                 if (!ValidateType(paramTypes[i]))
+                {
                     throw new ArgumentException(SR.Argument_BadTypeInCustomAttribute);
+                }
+            }
 
             // Now verify that the types of the actual parameters are compatible with the types of the formal parameters.
-            for (i = 0; i < paramTypes.Length; i++)
+            for (int i = 0; i < paramTypes.Length; i++)
             {
                 object constructorArg = constructorArgs[i];
                 if (constructorArg == null)
@@ -171,33 +187,43 @@ namespace System.Reflection.Emit
             writer.Write((ushort)1);
 
             // Now emit the constructor argument values (no need for types, they're inferred from the constructor signature).
-            for (i = 0; i < constructorArgs.Length; i++)
+            for (int i = 0; i < constructorArgs.Length; i++)
+            {
                 EmitValue(writer, paramTypes[i], constructorArgs[i]);
+            }
 
             // Next a short with the count of properties and fields.
             writer.Write((ushort)(namedProperties.Length + namedFields.Length));
 
             // Emit all the property sets.
-            for (i = 0; i < namedProperties.Length; i++)
+            for (int i = 0; i < namedProperties.Length; i++)
             {
                 // Validate the property.
                 PropertyInfo property = namedProperties[i];
                 if (property == null)
+                {
                     throw new ArgumentNullException("namedProperties[" + i + "]");
+                }
 
                 // Allow null for non-primitive types only.
                 Type propType = property.PropertyType;
                 object propertyValue = propertyValues[i];
                 if (propertyValue == null && propType.IsValueType)
+                {
                     throw new ArgumentNullException("propertyValues[" + i + "]");
+                }
 
                 // Validate property type.
                 if (!ValidateType(propType))
+                {
                     throw new ArgumentException(SR.Argument_BadTypeInCustomAttribute);
+                }
 
                 // Property has to be writable.
                 if (!property.CanWrite)
+                {
                     throw new ArgumentException(SR.Argument_NotAWritableProperty);
+                }
 
                 // Property has to be from the same class or base class as ConstructorInfo.
                 if (property.DeclaringType != con.DeclaringType
@@ -215,7 +241,9 @@ namespace System.Reflection.Emit
                         // type is one.
                         if (!(property.DeclaringType is TypeBuilder) ||
                             !con.DeclaringType.IsSubclassOf(((TypeBuilder)property.DeclaringType).BakedRuntimeType))
+                        {
                             throw new ArgumentException(SR.Argument_BadPropertyForConstructorBuilder);
+                        }
                     }
                 }
 
@@ -236,22 +264,28 @@ namespace System.Reflection.Emit
             }
 
             // Emit all the field sets.
-            for (i = 0; i < namedFields.Length; i++)
+            for (int i = 0; i < namedFields.Length; i++)
             {
                 // Validate the field.
                 FieldInfo namedField = namedFields[i];
                 if (namedField == null)
+                {
                     throw new ArgumentNullException("namedFields[" + i + "]");
+                }
 
                 // Allow null for non-primitive types only.
                 Type fldType = namedField.FieldType;
                 object fieldValue = fieldValues[i];
                 if (fieldValue == null && fldType.IsValueType)
+                {
                     throw new ArgumentNullException("fieldValues[" + i + "]");
+                }
 
                 // Validate field type.
                 if (!ValidateType(fldType))
+                {
                     throw new ArgumentException(SR.Argument_BadTypeInCustomAttribute);
+                }
 
                 // Field has to be from the same class or base class as ConstructorInfo.
                 if (namedField.DeclaringType != con.DeclaringType
@@ -269,7 +303,9 @@ namespace System.Reflection.Emit
                         // type is one.
                         if (!(namedField.DeclaringType is TypeBuilder) ||
                             !con.DeclaringType.IsSubclassOf(((TypeBuilder)namedFields[i].DeclaringType).BakedRuntimeType))
+                        {
                             throw new ArgumentException(SR.Argument_BadFieldForConstructorBuilder);
+                        }
                     }
                 }
 
@@ -290,7 +326,7 @@ namespace System.Reflection.Emit
             }
 
             // Create the blob array.
-            m_blob = ((MemoryStream)writer.BaseStream).ToArray();
+            _blob = ((MemoryStream)writer.BaseStream).ToArray();
         }
 
         private static void VerifyTypeAndPassedObjectType(Type type, Type passedType, string paramName)
@@ -458,7 +494,7 @@ namespace System.Reflection.Emit
             else if (type.IsArray)
             {
                 if (value == null)
-                    writer.Write((uint)0xffffffff);
+                    writer.Write(0xffffffff);
                 else
                 {
                     Array a = (Array)value;
@@ -531,22 +567,15 @@ namespace System.Reflection.Emit
             }
             else
             {
-                string typename = "null";
-
-                if (value != null)
-                    typename = value.GetType().ToString();
-
-                throw new ArgumentException(SR.Format(SR.Argument_BadParameterTypeForCAB, typename));
+                string typeName = value != null ? value.GetType().ToString() : "null";
+                throw new ArgumentException(SR.Format(SR.Argument_BadParameterTypeForCAB, typeName));
             }
         }
-
-
-
 
         // return the byte interpretation of the custom attribute
         internal void CreateCustomAttribute(ModuleBuilder mod, int tkOwner)
         {
-            CreateCustomAttribute(mod, tkOwner, mod.GetConstructorToken(m_con).Token, false);
+            CreateCustomAttribute(mod, tkOwner, mod.GetConstructorToken(_con).Token, false);
         }
 
         /// <summary>
@@ -554,12 +583,8 @@ namespace System.Reflection.Emit
         /// </summary>
         internal void CreateCustomAttribute(ModuleBuilder mod, int tkOwner, int tkAttrib, bool toDisk)
         {
-            TypeBuilder.DefineCustomAttribute(mod, tkOwner, tkAttrib, m_blob, toDisk,
-                                                      typeof(System.Diagnostics.DebuggableAttribute) == m_con.DeclaringType);
+            TypeBuilder.DefineCustomAttribute(mod, tkOwner, tkAttrib, _blob, toDisk,
+                                                      _con.DeclaringType = typeof(DebuggableAttribute));
         }
-
-        internal ConstructorInfo m_con;
-        internal object[] m_constructorArgs;
-        internal byte[] m_blob;
     }
 }

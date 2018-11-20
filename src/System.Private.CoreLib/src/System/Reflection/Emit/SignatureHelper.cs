@@ -389,7 +389,7 @@ namespace System.Reflection.Emit
             }
             else if (clsArgument is EnumBuilder)
             {
-                TypeBuilder clsBuilder = ((EnumBuilder)clsArgument).m_typeBuilder;
+                TypeBuilder clsBuilder = ((EnumBuilder)clsArgument)._typeBuilder;
                 TypeToken tkType;
 
                 if (clsBuilder.Module.Equals(m_module))
